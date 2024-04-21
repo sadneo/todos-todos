@@ -3,21 +3,47 @@
 use axum::Router;
 use axum::routing;
 use tokio::io;
+use serde_json::{ser, de};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Todo {
     time: u64,
     content: String,
 }
 
+const SHARE_PATH: &str = "/.local/share";
+const DIR_NAME: &str = "/todo";
+const FILE_NAME: &str = "/data.json";
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    let path = match std::env::var("XDG_DATA_HOME") {
+        Ok(state_home) => state_home + DIR_NAME,
+        Err(_) => std::env::var("HOME").unwrap() + SHARE_PATH + DIR_NAME,
+    };
+    let file_path = path.clone() + FILE_NAME;
+
+    let todos: Vec<Todo> = match std::fs::read(&file_path) {
+        Ok(file) => de::from_slice(&file).unwrap(),
+        Err(e) => match e.kind() {
+            io::ErrorKind::NotFound => {
+                let todos: Vec<Todo> = vec![];
+                let contents = ser::to_vec(&todos).unwrap();
+                std::fs::create_dir_all(path)?;
+                std::fs::write(&file_path, contents.as_slice())?;
+                todos
+            }
+            _ => panic!("{}", e),
+        }
+    };
+
     let router = Router::new()
-        .route("/", routing::get(homepage));
-        // .route("/api/get-todos", routing::get(shit))
-        // .route("/api/add_todo", routing::post(shit))
-        // .route("/api/edit_todo", routing::patch(shit))
-        // .route("/api/delete_todo", routing::post(shit));
+        .route("/", routing::get(homepage))
+        .route("/todos", routing::get(get_todos));
+        // .route("/todo/:id", routing::post(get_todos));
+        // .route("/todo/:id", routing::patch(get_todos));
+        // .route("/todo/:id", routing::delete(get_todos));
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     axum::serve(listener, router).await?;
