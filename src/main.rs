@@ -2,11 +2,12 @@
 
 use axum::Router;
 use axum::routing;
+use axum::extract::State;
 use tokio::io;
 use serde_json::{ser, de};
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 struct Todo {
     time: u64,
     content: String,
@@ -38,9 +39,12 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    // get todos uses state, middleware writes state to file
+
     let router = Router::new()
         .route("/", routing::get(homepage))
-        .route("/todos", routing::get(get_todos));
+        .route("/todos", routing::get(get_todos))
+        .with_state(todos);
         // .route("/todo/:id", routing::post(get_todos));
         // .route("/todo/:id", routing::patch(get_todos));
         // .route("/todo/:id", routing::delete(get_todos));
@@ -54,8 +58,8 @@ async fn homepage() -> &'static str {
     "Hello world!"
 }
 
-async fn get_todos() -> Vec<Todo> {
-    todo!();
+async fn get_todos(State(todos): State<Vec<Todo>>) -> String {
+    serde_json::to_string(&todos).unwrap()
 }
 
 async fn add_todo(todo: Todo) -> io::Result<()> {
