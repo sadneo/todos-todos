@@ -1,15 +1,20 @@
 #![allow(dead_code)]
 
-use axum::Router;
-use axum::routing;
-use axum::extract::State;
-use tokio::io;
+use std::time::SystemTime;
+use std::sync::{Arc, Mutex};
+
+use axum::{routing, Router};
+use axum::middleware::{self, Next};
+use axum::response::Response;
+use axum::extract::{Path, State, Request, Extension};
+use axum::http::StatusCode;
+use tokio::{io, fs};
 use serde_json::{ser, de};
 use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Todo {
-    time: u64,
+    time: SystemTime,
     content: String,
 }
 
@@ -18,7 +23,7 @@ const DIR_NAME: &str = "/todo";
 const FILE_NAME: &str = "/data.json";
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> io::Result<()> {
     let path = match std::env::var("XDG_DATA_HOME") {
         Ok(state_home) => state_home + DIR_NAME,
         Err(_) => std::env::var("HOME").unwrap() + SHARE_PATH + DIR_NAME,
@@ -39,15 +44,17 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    // get todos uses state, middleware writes state to file
+    let state = Arc::new(Mutex::new(todos));
 
     let router = Router::new()
         .route("/", routing::get(homepage))
-        .route("/todos", routing::get(get_todos))
-        .with_state(todos);
-        // .route("/todo/:id", routing::post(get_todos));
-        // .route("/todo/:id", routing::patch(get_todos));
-        // .route("/todo/:id", routing::delete(get_todos));
+        .route("/get", routing::get(get_todos))
+        .route("/add/*content", routing::post(add_todo))
+        .route("/edit/:id/*content", routing::patch(edit_todo))
+        .route("/delete/:id", routing::delete(delete_todo))
+        .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
+        .layer(Extension(file_path))
+        .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     axum::serve(listener, router).await?;
@@ -58,10 +65,34 @@ async fn homepage() -> &'static str {
     "Hello world!"
 }
 
-async fn get_todos(State(todos): State<Vec<Todo>>) -> String {
-    serde_json::to_string(&todos).unwrap()
+async fn save_state (State(todos): State<Arc<Mutex<Vec<Todo>>>>, Extension(file_path): Extension<String>, request: Request, next: Next) -> Response {
+    let bytes = ser::to_vec(&*todos.lock().unwrap()).unwrap();
+    fs::write(file_path, bytes).await.unwrap();
+    next.run(request).await
 }
 
-async fn add_todo(todo: Todo) -> io::Result<()> {
-    todo!("{:?}", todo);
+async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
+    let todo = todos.lock().unwrap();
+    ser::to_string(&*todo).unwrap()
+}
+
+async fn add_todo(State(todos): State<Arc<Mutex<Vec<Todo>>>>, Path(content): Path<String>) -> StatusCode {
+    let time = SystemTime::now();
+    let todo = Todo{time, content};
+    todos.lock().unwrap().push(todo);
+    StatusCode::CREATED
+}
+
+async fn edit_todo(State(state): State<Arc<Mutex<Vec<Todo>>>>, Path((id, content)): Path<(usize, String)>) -> StatusCode {
+    let mut todos = state.lock().unwrap();
+    let Some(todo) = todos.get_mut(id) else {return StatusCode::NOT_FOUND};
+    todo.content = content;
+    StatusCode::OK
+}
+
+async fn delete_todo(State(state): State<Arc<Mutex<Vec<Todo>>>>, Path(index): Path<usize>) -> StatusCode {
+    let mut todos = state.lock().unwrap();
+    if index >= todos.len() {return StatusCode::NOT_FOUND} // so swap_remove doesn't panic
+    todos.swap_remove(index);
+    StatusCode::OK
 }
