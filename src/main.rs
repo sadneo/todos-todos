@@ -1,16 +1,16 @@
 #![allow(dead_code)]
 
-use std::time::SystemTime;
 use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 
-use axum::{routing, Router};
+use axum::extract::{Extension, Path, Request, State};
+use axum::http::StatusCode;
 use axum::middleware::{self, Next};
 use axum::response::Response;
-use axum::extract::{Path, State, Request, Extension};
-use axum::http::StatusCode;
-use tokio::{io, fs};
-use serde_json::{ser, de};
-use serde::{Serialize, Deserialize};
+use axum::{routing, Router};
+use serde::{Deserialize, Serialize};
+use serde_json::{de, ser};
+use tokio::{fs, io};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Todo {
@@ -41,7 +41,7 @@ async fn main() -> io::Result<()> {
                 todos
             }
             _ => panic!("{}", e),
-        }
+        },
     };
 
     let state = Arc::new(Mutex::new(todos));
@@ -65,7 +65,12 @@ async fn homepage() -> &'static str {
     "Hello world!"
 }
 
-async fn save_state (State(todos): State<Arc<Mutex<Vec<Todo>>>>, Extension(file_path): Extension<String>, request: Request, next: Next) -> Response {
+async fn save_state(
+    State(todos): State<Arc<Mutex<Vec<Todo>>>>,
+    Extension(file_path): Extension<String>,
+    request: Request,
+    next: Next,
+) -> Response {
     let bytes = ser::to_vec(&*todos.lock().unwrap()).unwrap();
     fs::write(file_path, bytes).await.unwrap();
     next.run(request).await
@@ -76,23 +81,38 @@ async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
     ser::to_string(&*todo).unwrap()
 }
 
-async fn add_todo(State(todos): State<Arc<Mutex<Vec<Todo>>>>, Path(content): Path<String>) -> StatusCode {
+async fn add_todo(
+    State(todos): State<Arc<Mutex<Vec<Todo>>>>,
+    Path(content): Path<String>,
+) -> StatusCode {
     let time = SystemTime::now();
-    let todo = Todo{time, content};
+    let todo = Todo { time, content };
     todos.lock().unwrap().push(todo);
     StatusCode::CREATED
 }
 
-async fn edit_todo(State(state): State<Arc<Mutex<Vec<Todo>>>>, Path((id, content)): Path<(usize, String)>) -> StatusCode {
+async fn edit_todo(
+    State(state): State<Arc<Mutex<Vec<Todo>>>>,
+    Path((id, content)): Path<(usize, String)>,
+) -> StatusCode {
     let mut todos = state.lock().unwrap();
-    let Some(todo) = todos.get_mut(id) else {return StatusCode::NOT_FOUND};
+    let Some(todo) = todos.get_mut(id) else {
+        return StatusCode::NOT_FOUND;
+    };
+
     todo.content = content;
     StatusCode::OK
 }
 
-async fn delete_todo(State(state): State<Arc<Mutex<Vec<Todo>>>>, Path(index): Path<usize>) -> StatusCode {
+async fn delete_todo(
+    State(state): State<Arc<Mutex<Vec<Todo>>>>,
+    Path(index): Path<usize>,
+) -> StatusCode {
     let mut todos = state.lock().unwrap();
-    if index >= todos.len() {return StatusCode::NOT_FOUND} // so swap_remove doesn't panic
+    if index >= todos.len() {
+        return StatusCode::NOT_FOUND;
+    } // so swap_remove doesn't panic
+
     todos.swap_remove(index);
     StatusCode::OK
 }
