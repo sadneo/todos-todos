@@ -1,12 +1,13 @@
 #![allow(dead_code)]
 
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use axum::extract::{Extension, Path, Request, State};
 use axum::http::StatusCode;
 use axum::middleware::{self, Next};
-use axum::response::Response;
+use axum::response::{Html, Response};
 use axum::{routing, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
@@ -36,7 +37,7 @@ async fn main() -> io::Result<()> {
             io::ErrorKind::NotFound => {
                 let todos: Vec<Todo> = vec![];
                 let contents = ser::to_vec(&todos).unwrap();
-                std::fs::create_dir_all(path)?;
+                std::fs::create_dir_all(&path)?;
                 std::fs::write(&file_path, contents.as_slice())?;
                 todos
             }
@@ -48,12 +49,13 @@ async fn main() -> io::Result<()> {
 
     let router = Router::new()
         .route("/", routing::get(homepage))
+        .route("/static/*", routing::get(get_static))
         .route("/get", routing::get(get_todos))
         .route("/add/*content", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
         .route("/delete/:id", routing::delete(delete_todo))
         .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
-        .layer(Extension(file_path))
+        .layer(Extension((path, file_path)))
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
@@ -61,8 +63,24 @@ async fn main() -> io::Result<()> {
     Ok(())
 }
 
-async fn homepage() -> &'static str {
-    "Hello world!"
+async fn homepage(
+    Extension((path, _)): Extension<(String, String)>,
+) -> Result<Html<String>, StatusCode> {
+    let mut path = PathBuf::from(path);
+    path.push("static/homepage.html");
+    fs::read_to_string(path)
+        .await
+        .map_or(Err(StatusCode::NOT_FOUND), |s| Ok(Html::from(s)))
+}
+
+async fn get_static(
+    Extension((path, _)): Extension<(String, String)>,
+    Path(relative_path): Path<String>,
+) -> Result<Html<String>, StatusCode> {
+    let mut path = PathBuf::from(path);
+    let mut relative_path = PathBuf::from(relative_path);
+
+    todo!()
 }
 
 async fn save_state(
