@@ -9,10 +9,10 @@
             </form>
         </div>
         <div> <!-- Categories and Sort-->
-            <select name="categories">
+            <select name="categories" id="categories">
                 <option>All</option>
             </select>
-            <select name="sort">
+            <select name="sort" id="sort">
                 <option>Sort by name</option>
                 <option>Sort by priority</option>
             </select>
@@ -20,4 +20,34 @@
         <div> <!-- Content -->
         </div>
     </body>
+    <script>
+        const categorySelector = document.querySelector("#categories");
+        const sortSelector = document.querySelector("#sort");
+
+        let categoryOption = 0;
+        let sortOption = 0;
+
+        categorySelector.addEventListener("change", (event) => {
+            categoryOption = categorySelector.selectedIndex;
+            update();
+        });
+
+        sortSelector.addEventListener("change", (event) => {
+            sortOption = sortSelector.selectedIndex;
+            update();
+        });
+
+        function login() {
+            // TODO: get the username and password and login
+        }
+        function update() {
+            // TODO: Update todos using categories and sort options when they update
+            let poop = fetch("get")
+            console.log(poop)
+        }
+
+        function render() {
+            // TODO: render all the todos with templates when todos are updated or logged in
+        }
+    </script>
 </html>

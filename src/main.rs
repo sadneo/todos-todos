@@ -19,17 +19,19 @@ struct Todo {
     content: String,
 }
 
-const SHARE_PATH: &str = "/.local/share";
+const SHARE_PATH: &str = "/Projects/todos-todos"; // "/.local/share"
 const DIR_NAME: &str = "/todo";
 const FILE_NAME: &str = "/data.json";
 
 #[tokio::main]
 async fn main() -> io::Result<()> {
-    let path = match std::env::var("XDG_DATA_HOME") {
-        Ok(state_home) => state_home + DIR_NAME,
-        Err(_) => std::env::var("HOME").unwrap() + SHARE_PATH + DIR_NAME,
-    };
+    let path = std::env::var("HOME").unwrap() + SHARE_PATH;
+    // let path = match std::env::var("XDG_DATA_HOME") {
+    //     Ok(state_home) => state_home + DIR_NAME,
+    //     Err(_) => std::env::var("HOME").unwrap() + SHARE_PATH + DIR_NAME,
+    // };
     let file_path = path.clone() + FILE_NAME;
+    println!("{:?}, {:?}", path, file_path);
 
     let todos: Vec<Todo> = match std::fs::read(&file_path) {
         Ok(file) => de::from_slice(&file).unwrap(),
@@ -49,12 +51,12 @@ async fn main() -> io::Result<()> {
 
     let router = Router::new()
         .route("/", routing::get(homepage))
-        .route("/static/*", routing::get(get_static))
+        // .route("/static/*path", routing::get(get_static))
         .route("/get", routing::get(get_todos))
         .route("/add/*content", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
         .route("/delete/:id", routing::delete(delete_todo))
-        .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
+        // .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
         .layer(Extension((path, file_path)))
         .with_state(state.clone());
 
@@ -78,21 +80,27 @@ async fn get_static(
     Path(relative_path): Path<String>,
 ) -> Result<Html<String>, StatusCode> {
     let mut path = PathBuf::from(path);
-    let mut relative_path = PathBuf::from(relative_path);
+    println!("{:?}", path);
+    let relative_path = PathBuf::from(relative_path);
+    println!("{:?}", relative_path);
 
-    todo!()
+    path.push("static/homepage.html");
+    println!("{:?}", path);
+    fs::read_to_string(path)
+        .await
+        .map_or(Err(StatusCode::NOT_FOUND), |s| Ok(Html::from(s)))
 }
 
-async fn save_state(
-    State(todos): State<Arc<Mutex<Vec<Todo>>>>,
-    Extension(file_path): Extension<String>,
-    request: Request,
-    next: Next,
-) -> Response {
-    let bytes = ser::to_vec(&*todos.lock().unwrap()).unwrap();
-    fs::write(file_path, bytes).await.unwrap();
-    next.run(request).await
-}
+// async fn save_state(
+//     State(todos): State<Arc<Mutex<Vec<Todo>>>>,
+//     Extension(file_path): Extension<String>,
+//     request: Request,
+//     next: Next,
+// ) -> Response {
+//     let bytes = ser::to_vec(&*todos.lock().unwrap()).unwrap();
+//     fs::write(file_path, bytes).await.unwrap();
+//     next.run(request).await
+// }
 
 async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
     let todo = todos.lock().unwrap();
