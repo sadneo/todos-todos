@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html>
+    <head>
+        <link rel="stylesheet" href="static/style.css">
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    </head>
+
     <body>
         <div> <!-- Login -->
             <form>
@@ -17,15 +22,37 @@
                 <option>Sort by priority</option>
             </select>
         </div>
-        <div> <!-- Content -->
+        <div>
+            <input id="addTodo" type="button" value="Add">
+            <input id="addTodoContent" placeholder="content">
         </div>
+
+        <div id="content"></div>
+
+        <template id="todoTemplate">
+            <div class="todoDiv">
+                <span id="todoTime"></span>
+                <span id="todoText"></span>
+                <br />
+                <button>Edit</button> <!-- edit -->
+                <button>Delete</button> <!-- delete -->
+            </div>
+        </template>
     </body>
     <script>
         const categorySelector = document.querySelector("#categories");
         const sortSelector = document.querySelector("#sort");
+        const todoTemplate = document.querySelector("#todoTemplate");
 
         let categoryOption = 0;
         let sortOption = 0;
+
+        let todos = [];
+
+        document.querySelector("#addTodo").addEventListener("click", () => {
+            const addTodoContent = document.querySelector("#addTodoContent");
+            fetch(`add/${addTodoContent.value}`, {method: "POST"});
+        });
 
         categorySelector.addEventListener("change", (event) => {
             categoryOption = categorySelector.selectedIndex;
@@ -42,12 +69,33 @@
         }
         function update() {
             // TODO: Update todos using categories and sort options when they update
-            let poop = fetch("get")
-            console.log(poop)
+            console.log(`Category: ${categoryOption}, Sort: ${sortOption}`);
+            let poop = fetch("get").then((response) => {
+                response.json().then((value) => {
+                    todos = value;
+                    render();
+                });
+            });
         }
 
         function render() {
             // TODO: render all the todos with templates when todos are updated or logged in
+            content.textContent = ""
+
+            for (todo of todos) {
+                const todoNode = todoTemplate.content.cloneNode(true);
+                console.log(todoNode.innerHTML);
+                const todoTime = todoNode.querySelector("#todoTime");
+                todoTime.textContent = todo.time.secs_since_epoch;
+                const todoText = todoNode.querySelector("#todoText");
+                todoText.textContent = todo.content;
+
+                const content = document.querySelector("#content");
+                content.appendChild(todoNode);
+            }
         }
+
+        update();
+        render();
     </script>
 </html>
