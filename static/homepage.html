@@ -1,19 +1,28 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <title>Todos Todos</title>
         <link rel="stylesheet" href="static/style.css">
         <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     </head>
 
     <body>
-        <div> <!-- Login -->
+        <header>
+            <h3>Todos</h3>
+            <div class="separator"></div>
             <form>
                 <input placeholder="username">
                 <input type="password" placeholder="password">
                 <input type="submit" value="Login">
             </form>
-        </div>
-        <div> <!-- Categories and Sort-->
+        </header>
+
+        <div class="controls">
+            <div>
+                <input id="addTodo" type="button" value="Add">
+                <input class="addTodoContent" id="addTodoContent" size=50>
+            </div>
+            <div class="separator"></div>
             <select name="categories" id="categories">
                 <option>All</option>
             </select>
@@ -21,10 +30,6 @@
                 <option>Sort by name</option>
                 <option>Sort by priority</option>
             </select>
-        </div>
-        <div>
-            <input id="addTodo" type="button" value="Add">
-            <input id="addTodoContent" placeholder="content">
         </div>
 
         <div id="content"></div>
@@ -39,63 +44,6 @@
             </div>
         </template>
     </body>
-    <script>
-        const categorySelector = document.querySelector("#categories");
-        const sortSelector = document.querySelector("#sort");
-        const todoTemplate = document.querySelector("#todoTemplate");
 
-        let categoryOption = 0;
-        let sortOption = 0;
-
-        let todos = [];
-
-        document.querySelector("#addTodo").addEventListener("click", () => {
-            const addTodoContent = document.querySelector("#addTodoContent");
-            fetch(`add/${addTodoContent.value}`, {method: "POST"});
-        });
-
-        categorySelector.addEventListener("change", (event) => {
-            categoryOption = categorySelector.selectedIndex;
-            update();
-        });
-
-        sortSelector.addEventListener("change", (event) => {
-            sortOption = sortSelector.selectedIndex;
-            update();
-        });
-
-        function login() {
-            // TODO: get the username and password and login
-        }
-        function update() {
-            // TODO: Update todos using categories and sort options when they update
-            console.log(`Category: ${categoryOption}, Sort: ${sortOption}`);
-            let poop = fetch("get").then((response) => {
-                response.json().then((value) => {
-                    todos = value;
-                    render();
-                });
-            });
-        }
-
-        function render() {
-            // TODO: render all the todos with templates when todos are updated or logged in
-            content.textContent = ""
-
-            for (todo of todos) {
-                const todoNode = todoTemplate.content.cloneNode(true);
-                console.log(todoNode.innerHTML);
-                const todoTime = todoNode.querySelector("#todoTime");
-                todoTime.textContent = todo.time.secs_since_epoch;
-                const todoText = todoNode.querySelector("#todoText");
-                todoText.textContent = todo.content;
-
-                const content = document.querySelector("#content");
-                content.appendChild(todoNode);
-            }
-        }
-
-        update();
-        render();
-    </script>
+    <script src="/static/script.js"></script>
 </html>

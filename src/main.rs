@@ -87,7 +87,7 @@ async fn get_static(
     }) {
         "html" => "text/html",
         "css" => "text/css",
-        "js" => "text/js",
+        "js" => "text/javascript",
         _ => "application/octet-stream",
     };
 
