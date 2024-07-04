@@ -7,7 +7,7 @@ use std::time::SystemTime;
 use axum::extract::{Extension, Path, Request, State};
 use axum::http::{header, StatusCode};
 use axum::middleware::{self, Next};
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{IntoResponse, Response};
 use axum::{routing, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
@@ -19,7 +19,7 @@ struct Todo {
     content: String,
 }
 
-const SHARE_PATH: &str = "/Projects/todos-todos"; // "/.local/share"
+const SHARE_PATH: &str = "/Projects/todos-todos"; // contains data.json and static/
 const DIR_NAME: &str = "/todo";
 const FILE_NAME: &str = "/data.json";
 
@@ -31,7 +31,6 @@ async fn main() -> io::Result<()> {
     //     Err(_) => std::env::var("HOME").unwrap() + SHARE_PATH + DIR_NAME,
     // };
     let file_path = path.clone() + FILE_NAME;
-    println!("Paths: {:?}, {:?}", path, file_path);
 
     let todos: Vec<Todo> = match std::fs::read(&file_path) {
         Ok(file) => de::from_slice(&file).unwrap(),
@@ -51,7 +50,7 @@ async fn main() -> io::Result<()> {
 
     let router = Router::new()
         .route("/", routing::get(homepage))
-        .route("/static/*path", routing::get(get_static))
+        .route("/static/*path", routing::get(handle_static))
         .route("/get", routing::get(get_todos))
         .route("/add/*content", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
@@ -80,21 +79,21 @@ async fn save_state(
 
 async fn homepage(
     Extension((path, _)): Extension<(String, String)>,
-) -> Result<Html<String>, StatusCode> {
-    let mut path = PathBuf::from(path);
-    path.push("static/homepage.html");
-    fs::read_to_string(path)
-        .await
-        .map_or(Err(StatusCode::NOT_FOUND), |s| Ok(Html::from(s)))
+) -> Result<impl IntoResponse, StatusCode> {
+    get_static(path, "homepage.html".to_owned()).await
 }
 
-async fn get_static(
+async fn handle_static(
     Extension((path, _)): Extension<(String, String)>,
-    Path(relative_path): Path<String>,
+    Path(file): Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
+    get_static(path, file).await
+}
+
+async fn get_static(path: String, file: String) -> Result<impl IntoResponse, StatusCode> {
     let mut path = PathBuf::from(path);
     path.push("static");
-    path.push(&relative_path);
+    path.push(file);
 
     let content_type = match path.extension().map_or("", |os_str| {
         os_str.to_str().expect("extension should be valid str")
