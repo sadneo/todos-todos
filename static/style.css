@@ -1,26 +1,22 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
+* {
+    font-family: "Roboto";
+}
+
 div {
     margin: 5px;
-    padding: 2px;
 }
 
 input {
-    font-family: "Roboto";
-    padding: 2px 4px;
     border: 1px solid #BDBDBD;
     border-radius: 0px;
-    resize: none;
 }
 
 select {
     border: 1px solid #BDBDBD;
     padding: 2px 4px;
     margin: 8px;
-}
-
-.controls {
-    display: flex;
 }
 
 .separator {
@@ -30,7 +26,6 @@ select {
     padding: 0px;
 }
 
-/* header stuff */
 html, body {
     padding: 0px;
     margin: 0px;
@@ -44,8 +39,11 @@ header {
 }
 
 header h3 {
-    font-family: "Roboto";
     color: #FAFAFA;
     padding: 0px;
     margin: 0px;
+}
+
+.controls {
+    display: flex;
 }

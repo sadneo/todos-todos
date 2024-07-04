@@ -1,5 +1,3 @@
-const categorySelector = document.querySelector("#categories");
-const sortSelector = document.querySelector("#sort");
 const todoTemplate = document.querySelector("#todoTemplate");
 
 let categoryOption = 0;
@@ -22,19 +20,6 @@ document.querySelector("#addTodoContent").addEventListener("keydown", (event) =>
     }
 });
 
-categorySelector.addEventListener("change", (event) => {
-    categoryOption = categorySelector.selectedIndex;
-    update();
-});
-
-sortSelector.addEventListener("change", (event) => {
-    sortOption = sortSelector.selectedIndex;
-    update();
-});
-
-function login() {
-    // TODO: get the username and password and login
-}
 function update() {
     fetch("get").then((response) => {
         response.json().then((value) => {
@@ -50,7 +35,8 @@ function render() {
     for (const [index, todo] of todos.entries()) {
         const todoItem = todoTemplate.content.cloneNode(true);
         const todoTime = todoItem.querySelector("#todoTime");
-        todoTime.textContent = todo.time.secs_since_epoch;
+        const date = new Date(todo.time.secs_since_epoch * 1000); // convert to milliseconds
+        todoTime.textContent = date.toLocaleString();
         const todoText = todoItem.querySelector("#todoText");
         todoText.textContent = todo.content;
 
@@ -71,9 +57,9 @@ function render() {
 }
 
 function editTodo(event) {
-    let todo = event.target.parentElement;
-    let todoEditInput = todo.querySelector("#todoEditInput");
-    let todoText = todo.querySelector("#todoText");
+    const todo = event.target.parentElement;
+    const todoEditInput = todo.querySelector("#todoEditInput");
+    const todoText = todo.querySelector("#todoText");
 
     todoEditInput.value = todoText.textContent;
     todoEditInput.style.display = "initial";
@@ -82,11 +68,11 @@ function editTodo(event) {
 }
 
 function confirmEditTodo(event) {
-    let todo = event.target.parentElement;
-    let todoEditInput = todo.querySelector("#todoEditInput");
-    let todoText = todo.querySelector("#todoText");
+    const todo = event.target.parentElement;
+    const todoEditInput = todo.querySelector("#todoEditInput");
+    const todoText = todo.querySelector("#todoText");
 
-    let index = todoItems[todo.id];
+    const index = todoItems[todo.id];
     fetch(`/edit/${index}/${todoEditInput.value}`, {method:"PATCH"}).then(() => {
         todoEditInput.style.display = "none";
         todoText.style.display = "initial";
@@ -95,8 +81,8 @@ function confirmEditTodo(event) {
 }
 
 function deleteTodo(event) {
-    let todo = event.target.parentElement;
-    let index = todoItems[todo.id];
+    const todo = event.target.parentElement;
+    const index = todoItems[todo.id];
     fetch(`/delete/${index}`, {method:"DELETE"}).then(() => {
         todoItems[todo] = null;
         update();
