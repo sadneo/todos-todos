@@ -4,9 +4,10 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
-use axum::extract::{Extension, Path, State};
+use axum::extract::{Extension, Path, Request, State};
 use axum::http::{header, StatusCode};
-use axum::response::{Html, IntoResponse};
+use axum::middleware::{self, Next};
+use axum::response::{Html, IntoResponse, Response};
 use axum::{routing, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
@@ -55,13 +56,26 @@ async fn main() -> io::Result<()> {
         .route("/add/*content", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
         .route("/delete/:id", routing::delete(delete_todo))
-        // .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
+        .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
         .layer(Extension((path, file_path)))
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     axum::serve(listener, router).await?;
     Ok(())
+}
+
+async fn save_state(
+    State(todos): State<Arc<Mutex<Vec<Todo>>>>,
+    Extension((_, file_path)): Extension<(String, String)>,
+    request: Request,
+    next: Next,
+) -> Response {
+    let response = next.run(request).await;
+    let bytes = ser::to_vec(&*todos.lock().unwrap()).unwrap();
+    fs::write(file_path, bytes).await.unwrap();
+
+    response
 }
 
 async fn homepage(
