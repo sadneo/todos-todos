@@ -22,11 +22,25 @@ struct Tag {
 }
 
 #[derive(Debug, Deserialize)]
-struct TodoJson {
+struct AddTodo {
     short: String,
     description: String,
     priority: u8,
     tags: Vec<Tag>,
+}
+
+#[derive(Debug, Deserialize)]
+struct EditTodo {
+    index: usize,
+    short: String,
+    description: String,
+    priority: u8,
+    tags: Vec<Tag>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DeleteTodo {
+    index: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
