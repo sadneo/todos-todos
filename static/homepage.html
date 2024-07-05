@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Todos Todos</title>
+        <title>Todos To Do's</title>
         <link rel="stylesheet" href="static/style.css">
         <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     </head>
@@ -21,13 +21,20 @@
         <div id="content"></div>
 
         <template id="todoTemplate">
-            <div class="todoDiv">
-                <span id="todoTime"></span>
-                <span id="todoText"></span>
-                <input id="todoEditInput" style="display:none">
-                <br />
-                <button id="todoEdit">Edit</button>
-                <button id="todoDelete">Delete</button>
+            <div id="todoContainer">
+                <div class="todoDiv">
+                    <span id="todoTime"></span>
+                    <span id="todoText"></span>
+                    <input id="todoTextInput" style="display:none">
+                    <div class="separator"></div>
+                    <button id="todoEditText">Edit</button>
+                    <button id="todoEditDescription">Edit Description</button>
+                    <button id="todoSetPriority">Set Priority</button>
+                    <button id="todoEditTags">Edit Tags</button>
+                    <button id="todoDelete">Delete</button>
+                </div>
+                <span id="todoDescription"></span>
+                <input id="todoDescriptionInput" style="display:none"></span>
             </div>
         </template>
     </body>

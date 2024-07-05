@@ -47,3 +47,7 @@ header h3 {
 .controls {
     display: flex;
 }
+
+.todoDiv {
+    display: flex;
+}
