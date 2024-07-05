@@ -13,10 +13,29 @@ use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
 use tokio::{fs, io};
 
+const DEFAULT_PRIORITY: u8 = 127;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Tag {
+    name: String,
+    color: String, // placeholder
+}
+
+#[derive(Debug, Deserialize)]
+struct TodoJson {
+    short: String,
+    description: String,
+    priority: u8,
+    tags: Vec<Tag>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Todo {
+    short: String,
+    description: String,
+    priority: u8,
+    tags: Vec<Tag>,
     time: SystemTime,
-    content: String,
 }
 
 const SHARE_PATH: &str = "/Projects/todos-todos"; // contains data.json and static/
@@ -118,24 +137,30 @@ async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
 
 async fn add_todo(
     State(todos): State<Arc<Mutex<Vec<Todo>>>>,
-    Path(content): Path<String>,
+    Path(short): Path<String>,
 ) -> StatusCode {
     let time = SystemTime::now();
-    let todo = Todo { time, content };
+    let todo = Todo {
+        time,
+        short,
+        description: String::new(),
+        priority: DEFAULT_PRIORITY,
+        tags: vec![],
+    };
     todos.lock().unwrap().push(todo);
     StatusCode::CREATED
 }
 
 async fn edit_todo(
     State(state): State<Arc<Mutex<Vec<Todo>>>>,
-    Path((id, content)): Path<(usize, String)>,
+    Path((id, short)): Path<(usize, String)>,
 ) -> StatusCode {
     let mut todos = state.lock().unwrap();
     let Some(todo) = todos.get_mut(id) else {
         return StatusCode::NOT_FOUND;
     };
 
-    todo.content = content;
+    todo.short = short;
     StatusCode::OK
 }
 

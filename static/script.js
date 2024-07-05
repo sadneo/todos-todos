@@ -38,7 +38,7 @@ function render() {
         const date = new Date(todo.time.secs_since_epoch * SEC_TO_MILLISEC);
         todoTime.textContent = date.toLocaleString();
         const todoText = todoItem.querySelector("#todoText");
-        todoText.textContent = todo.content;
+        todoText.textContent = todo.short;
 
         todoItem.querySelector("#todoTextInput").addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
