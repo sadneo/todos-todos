@@ -65,7 +65,7 @@ function render() {
 
         const todoContainer = todoTime.closest("#todoContainer");
         todoContainer.index = index;
-        todoItems[todoContainer.index] = index;
+        todoItems[todoContainer.index] = todo;
 
         content.appendChild(todoItem);
     }
@@ -87,8 +87,17 @@ function confirmEditTodo(event) {
     const todoTextInput = todoContainer.querySelector("#todoTextInput");
     const todoText = todoContainer.querySelector("#todoText");
 
-    const index = todoItems[todoContainer.index];
-    fetch(`/edit/${index}/${todoTextInput.value}`, {method:"PATCH"}).then(() => {
+    const body = structuredClone(DEFAULT_TODO);
+    body.short = todoTextInput.value;
+    body.index = todoContainer.index;
+
+    fetch("/edit", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then(() => {
         todoTextInput.style.display = "none";
         todoText.style.display = "initial";
         update();
@@ -97,7 +106,7 @@ function confirmEditTodo(event) {
 
 function deleteTodo(event) {
     const todoContainer = event.target.closest("#todoContainer");
-    const index = todoItems[todoContainer.index];
+    const index = todoContainer.index;
     fetch("/delete", {
         method: "DELETE",
         body: JSON.stringify(index),

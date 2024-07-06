@@ -81,7 +81,7 @@ async fn main() -> io::Result<()> {
         .route("/static/*path", routing::get(handle_static))
         .route("/get", routing::get(get_todos))
         .route("/add", routing::post(add_todo))
-        .route("/edit/:id/*content", routing::patch(edit_todo))
+        .route("/edit", routing::patch(edit_todo))
         .route("/delete", routing::delete(delete_todo))
         .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
         .layer(Extension((path, file_path)))
@@ -162,14 +162,17 @@ async fn add_todo(
 
 async fn edit_todo(
     State(state): State<Arc<Mutex<Vec<Todo>>>>,
-    Path((id, short)): Path<(usize, String)>,
+    Json(todo_data): Json<EditTodo>,
 ) -> StatusCode {
     let mut todos = state.lock().unwrap();
-    let Some(todo) = todos.get_mut(id) else {
+    let Some(todo) = todos.get_mut(todo_data.index) else {
         return StatusCode::NOT_FOUND;
     };
 
-    todo.short = short;
+    todo.short = todo_data.short;
+    todo.description = todo_data.description;
+    todo.priority = todo_data.priority;
+    todo.tags = todo_data.tags;
     StatusCode::OK
 }
 
