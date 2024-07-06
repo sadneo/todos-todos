@@ -38,11 +38,6 @@ struct EditTodo {
     tags: Vec<Tag>,
 }
 
-#[derive(Debug, Deserialize)]
-struct DeleteTodo {
-    index: usize,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Todo {
     short: String,
@@ -87,7 +82,7 @@ async fn main() -> io::Result<()> {
         .route("/get", routing::get(get_todos))
         .route("/add", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
-        .route("/delete/:id", routing::delete(delete_todo))
+        .route("/delete", routing::delete(delete_todo))
         .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
         .layer(Extension((path, file_path)))
         .with_state(state.clone());
@@ -180,7 +175,7 @@ async fn edit_todo(
 
 async fn delete_todo(
     State(state): State<Arc<Mutex<Vec<Todo>>>>,
-    Path(index): Path<usize>,
+    Json(index): Json<usize>,
 ) -> StatusCode {
     let mut todos = state.lock().unwrap();
     if index >= todos.len() {

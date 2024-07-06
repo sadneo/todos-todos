@@ -98,7 +98,13 @@ function confirmEditTodo(event) {
 function deleteTodo(event) {
     const todoContainer = event.target.closest("#todoContainer");
     const index = todoItems[todoContainer.index];
-    fetch(`/delete/${index}`, {method:"DELETE"}).then(() => {
+    fetch("/delete", {
+        method: "DELETE",
+        body: JSON.stringify(index),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then(() => {
         todoItems[todoContainer.index] = null;
         update();
     });
