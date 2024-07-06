@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
-use axum::extract::{Extension, Path, Request, State};
+use axum::extract::{Extension, Json, Path, Request, State};
 use axum::http::{header, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
@@ -85,7 +85,7 @@ async fn main() -> io::Result<()> {
         .route("/", routing::get(homepage))
         .route("/static/*path", routing::get(handle_static))
         .route("/get", routing::get(get_todos))
-        .route("/add/*content", routing::post(add_todo))
+        .route("/add", routing::post(add_todo))
         .route("/edit/:id/*content", routing::patch(edit_todo))
         .route("/delete/:id", routing::delete(delete_todo))
         .route_layer(middleware::from_fn_with_state(state.clone(), save_state))
@@ -151,15 +151,15 @@ async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
 
 async fn add_todo(
     State(todos): State<Arc<Mutex<Vec<Todo>>>>,
-    Path(short): Path<String>,
+    Json(todo_data): Json<AddTodo>,
 ) -> StatusCode {
     let time = SystemTime::now();
     let todo = Todo {
         time,
-        short,
-        description: String::new(),
-        priority: DEFAULT_PRIORITY,
-        tags: vec![],
+        short: todo_data.short,
+        description: todo_data.description,
+        priority: todo_data.priority,
+        tags: todo_data.tags,
     };
     todos.lock().unwrap().push(todo);
     StatusCode::CREATED

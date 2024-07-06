@@ -1,11 +1,26 @@
 const SEC_TO_MILLISEC = 1000;
+const DEFAULT_TODO = {
+    short: "",
+    description: "",
+    priority: 127,
+    tags: [],
+}
 
 let todos = [];
 let todoItems = [];
 
 function addTodo() {
     const addTodoContent = document.querySelector("#addTodoContent");
-    fetch(`add/${addTodoContent.value}`, {method: "POST"});
+    const body = structuredClone(DEFAULT_TODO);
+    body.short = addTodoContent.value;
+
+    fetch("/add", {
+        method: "POST",
+        body: JSON.stringify(body),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
     addTodoContent.value = "";
     update();
 }
@@ -18,7 +33,7 @@ document.querySelector("#addTodoContent").addEventListener("keydown", (event) =>
 });
 
 function update() {
-    fetch("get").then((response) => {
+    fetch("/get").then((response) => {
         response.json().then((value) => {
             todos = value;
             todoItems = [];
