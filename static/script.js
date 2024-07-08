@@ -104,7 +104,8 @@ function confirmEditTodoText(event) {
     }).then(() => {
         todoTextInput.style.display = "none";
         todoText.style.display = "initial";
-        update();
+        todos[todoContainer.index].short = todoTextInput.value;
+        render();
     });
 }
 
@@ -137,18 +138,19 @@ function confirmEditTodoDescription(event) {
     }).then(() => {
         todoDescriptionInput.style.display = "none";
         todoDescription.style.display = "initial";
-        update();
+        todos[todoContainer.index].description = todoDescriptionInput.value;
+        render();
     });
 }
 
 function editTodoPriority(event) {
     const todoContainer = event.target.closest("#todoContainer");
+    const body = structuredClone(todos[todoContainer.index]);
     const priority = Number(prompt("New priority value 0-255", body.priority));
     if (priority < 0 && priortiy > 255) {
         alert("Invalid value!");
         return;
     }
-    const body = structuredClone(todos[todoContainer.index]);
     body.priority = priority;
     body.index = todoContainer.index;
 
@@ -159,7 +161,8 @@ function editTodoPriority(event) {
             "Content-Type": "application/json",
         },
     }).then(() => {
-        update();
+        todos[todoContainer.index].priority = priority;
+        render();
     });
 }
 
@@ -173,7 +176,8 @@ function deleteTodo(event) {
             "Content-Type": "application/json",
         },
     }).then(() => {
-        update();
+        todos.splice(index, 1);
+        render();
     });
 }
 
