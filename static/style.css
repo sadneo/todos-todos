@@ -26,6 +26,12 @@ select {
     padding-right: 5px;
 }
 
+.red {
+    font-family: "Fira Mono", monospace;
+    color: #B71C1C;
+    padding-right: 5px;
+}
+
 .separator {
     flex-grow: 1;
     border: 0px;
