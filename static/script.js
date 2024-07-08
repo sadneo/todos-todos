@@ -7,7 +7,6 @@ const DEFAULT_TODO = {
 }
 
 let todos = [];
-let todoItems = [];
 
 function addTodo() {
     const addTodoContent = document.querySelector("#addTodoContent");
@@ -36,7 +35,6 @@ function update() {
     fetch("/get").then((response) => {
         response.json().then((value) => {
             todos = value;
-            todoItems = [];
             render();
         });
     });
@@ -54,24 +52,33 @@ function render() {
         todoTime.textContent = date.toLocaleString();
         const todoText = todoItem.querySelector("#todoText");
         todoText.textContent = todo.short;
+        const todoDescription = todoItem.querySelector("#todoDescription");
+        todoDescription.textContent = todo.description;
 
         todoItem.querySelector("#todoTextInput").addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
-                confirmEditTodo(event);
+                confirmEditTodoText(event);
             }
         });
-        todoItem.querySelector("#todoEditText").addEventListener("click", editTodo);
+        todoItem.querySelector("#todoEditText").addEventListener("click", editTodoText);
+        todoItem.querySelector("#todoDescriptionInput").addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                confirmEditTodoDescription(event);
+            }
+        });
+        todoItem.querySelector("#todoEditDescription").addEventListener("click", editTodoDescription);
+        // priority
+        // tags
         todoItem.querySelector("#todoDelete").addEventListener("click", deleteTodo);
 
         const todoContainer = todoTime.closest("#todoContainer");
         todoContainer.index = index;
-        todoItems[todoContainer.index] = todo;
 
         content.appendChild(todoItem);
     }
 }
 
-function editTodo(event) {
+function editTodoText(event) {
     const todoContainer = event.target.closest("#todoContainer");
     const todoTextInput = todoContainer.querySelector("#todoTextInput");
     const todoText = todoContainer.querySelector("#todoText");
@@ -82,12 +89,12 @@ function editTodo(event) {
     todoTextInput.focus();
 }
 
-function confirmEditTodo(event) {
+function confirmEditTodoText(event) {
     const todoContainer = event.target.closest("#todoContainer");
     const todoTextInput = todoContainer.querySelector("#todoTextInput");
     const todoText = todoContainer.querySelector("#todoText");
 
-    const body = structuredClone(DEFAULT_TODO);
+    const body = structuredClone(todos[todoContainer.index]);
     body.short = todoTextInput.value;
     body.index = todoContainer.index;
 
@@ -104,6 +111,39 @@ function confirmEditTodo(event) {
     });
 }
 
+function editTodoDescription(event) {
+    const todoContainer = event.target.closest("#todoContainer");
+    const todoDescriptionInput = todoContainer.querySelector("#todoDescriptionInput");
+    const todoDescription = todoContainer.querySelector("#todoDescription");
+
+    todoDescriptionInput.value = todoDescription.textContent;
+    todoDescriptionInput.style.display = "initial";
+    todoDescription.style.display = "none";
+    todoDescriptionInput.focus();
+}
+
+function confirmEditTodoDescription(event) {
+    const todoContainer = event.target.closest("#todoContainer");
+    const todoDescriptionInput = todoContainer.querySelector("#todoDescriptionInput");
+    const todoDescription = todoContainer.querySelector("#todoDescription");
+
+    const body = structuredClone(todos[todoContainer.index]);
+    body.description = todoDescriptionInput.value;
+    body.index = todoContainer.index;
+
+    fetch("/edit", {
+        method: "PATCH",
+        body: JSON.stringify(body),
+        headers: {
+            "Content-Type": "application/json",
+        },
+    }).then(() => {
+        todoDescriptionInput.style.display = "none";
+        todoDescription.style.display = "initial";
+        update();
+    });
+}
+
 function deleteTodo(event) {
     const todoContainer = event.target.closest("#todoContainer");
     const index = todoContainer.index;
@@ -114,7 +154,6 @@ function deleteTodo(event) {
             "Content-Type": "application/json",
         },
     }).then(() => {
-        todoItems[todoContainer.index] = null;
         update();
     });
 }
