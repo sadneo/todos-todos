@@ -5,8 +5,12 @@ const DEFAULT_TODO = {
     priority: 127,
     tags: [],
 }
+const JSON_HEADERS = {
+    "Content-Type": "application/json",
+}
 
 let todos = [];
+let selectedFilterType = 0;
 
 function addTodo() {
     const addTodoContent = document.querySelector("#addTodoContent");
@@ -16,9 +20,7 @@ function addTodo() {
     fetch("/add", {
         method: "POST",
         body: JSON.stringify(body),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: JSON_HEADERS,
     });
     addTodoContent.value = "";
     update();
@@ -30,7 +32,7 @@ document.querySelector("#addTodoContent").addEventListener("keydown", (event) =>
 });
 
 function update() {
-    fetch("/get").then((response) => {
+    fetch(`/get/${selectedFilterType}`).then((response) => {
         response.json().then((value) => {
             todos = value;
             render();
@@ -98,9 +100,7 @@ function confirmEditTodoText(event) {
     fetch("/edit", {
         method: "PATCH",
         body: JSON.stringify(body),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: JSON_HEADERS,
     }).then(() => {
         todoTextInput.style.display = "none";
         todoText.style.display = "initial";
@@ -132,9 +132,7 @@ function confirmEditTodoDescription(event) {
     fetch("/edit", {
         method: "PATCH",
         body: JSON.stringify(body),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: JSON_HEADERS,
     }).then(() => {
         todoDescriptionInput.style.display = "none";
         todoDescription.style.display = "initial";
@@ -157,9 +155,7 @@ function editTodoPriority(event) {
     fetch("/edit", {
         method: "PATCH",
         body: JSON.stringify(body),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: JSON_HEADERS,
     }).then(() => {
         todos[todoContainer.index].priority = priority;
         render();
@@ -172,9 +168,7 @@ function deleteTodo(event) {
     fetch("/delete", {
         method: "DELETE",
         body: JSON.stringify(index),
-        headers: {
-            "Content-Type": "application/json",
-        },
+        headers: JSON_HEADERS,
     }).then(() => {
         todos.splice(index, 1);
         render();
