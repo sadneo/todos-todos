@@ -30,6 +30,10 @@ document.querySelector("#addTodo").addEventListener("click", addTodo);
 document.querySelector("#addTodoContent").addEventListener("keydown", (event) => {
     if (event.key === "Enter") addTodo();
 });
+document.querySelector("#filter").addEventListener("change", (event) => {
+    selectedFilterType = Number(event.target.value);
+    update();
+});
 
 function update() {
     fetch(`/get/${selectedFilterType}`).then((response) => {
