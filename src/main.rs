@@ -79,7 +79,7 @@ async fn main() -> io::Result<()> {
     let router = Router::new()
         .route("/", routing::get(homepage))
         .route("/static/*path", routing::get(handle_static))
-        .route("/get", routing::get(get_todos))
+        .route("/get/*filter_type", routing::get(get_todos))
         .route("/add", routing::post(add_todo))
         .route("/edit", routing::patch(edit_todo))
         .route("/delete", routing::delete(delete_todo))
@@ -139,9 +139,21 @@ async fn get_static(path: String, file: String) -> Result<impl IntoResponse, Sta
         })
 }
 
-async fn get_todos(State(todos): State<Arc<Mutex<Vec<Todo>>>>) -> String {
+async fn get_todos(
+    State(todos): State<Arc<Mutex<Vec<Todo>>>>,
+    Path(filter_type): Path<u32>,
+) -> Result<String, StatusCode> {
     let todo = todos.lock().unwrap();
-    ser::to_string(&*todo).unwrap()
+
+    if filter_type == 0 {
+        Ok(ser::to_string(&*todo).unwrap())
+    } else if filter_type == 1 {
+        let mut sorted = todo.clone();
+        sorted.sort_unstable_by_key(|todo| todo.priority);
+        Ok(ser::to_string(&*sorted).unwrap())
+    } else {
+        return Err(StatusCode::BAD_REQUEST);
+    }
 }
 
 async fn add_todo(
