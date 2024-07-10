@@ -180,4 +180,3 @@ function deleteTodo(event) {
 }
 
 update();
-render();

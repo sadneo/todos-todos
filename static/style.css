@@ -32,6 +32,11 @@ select {
     padding-right: 5px;
 }
 
+.imageButton {
+    height: 24px;
+    width: 24px;
+}
+
 .separator {
     flex-grow: 1;
     border: 0px;
